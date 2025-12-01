@@ -1,0 +1,24 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore model files (too large for git)
+models/*.h5
+models/*.pkl
+
+# Ignore data files
+data/*.json
+data/*.csv
+
+# Ignore output files
+outputs/*.png
+outputs/*.json
+logs/
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Virtual environment
+venv/
+env/

@@ -1,0 +1,10 @@
+{
+  "test_loss": 62666.25,
+  "test_mae": 188.49134826660156,
+  "test_rmse": 250.33229348931107,
+  "acc_5km": 0.010596026490066225,
+  "acc_10km": 0.046357615894039736,
+  "training_samples": 3503,
+  "validation_samples": 770,
+  "test_samples": 755
+}
