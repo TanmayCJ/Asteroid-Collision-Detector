@@ -154,7 +154,10 @@ export default function Dashboard() {
           {/* Center Panel - 3D Visualization */}
           <div className="lg:col-span-2 space-y-6">
             <div className="glass-panel rounded-xl overflow-hidden" style={{ height: '600px' }}>
-              <OrbitCanvas satellites={selectedPair.satA && selectedPair.satB ? [selectedPair.satA, selectedPair.satB] : []} />
+              <OrbitCanvas 
+                satellites={selectedPair.satA && selectedPair.satB ? [selectedPair.satA, selectedPair.satB] : []} 
+                prediction={prediction}
+              />
             </div>
 
             {/* Time Slider */}

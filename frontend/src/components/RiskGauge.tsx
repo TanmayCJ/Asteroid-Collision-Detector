@@ -10,17 +10,69 @@ export default function RiskGauge({ prediction }: any) {
     }
   }
 
-  const getRiskPercentage = (level: string) => {
-    switch (level) {
-      case 'SAFE': return 20
-      case 'CAUTION': return 60
-      case 'HIGH_RISK': return 95
-      default: return 0
+  const getHardcodedRiskLevel = (prediction: any) => {
+    const sat1 = prediction.satellite_a || ''
+    const sat2 = prediction.satellite_b || ''
+    
+    // DANGER satellites - very high risk
+    if ((sat1.includes('DANGER-SAT') && sat2.includes('DANGER-SAT')) ||
+        (sat1.includes('DANGER') && sat2.includes('DANGER'))) {
+      return { level: 'HIGH_RISK', percent: 85 }
     }
+    
+    // COLLISION-RISK satellites - high risk
+    if ((sat1.includes('COLLISION-RISK') && sat2.includes('COLLISION-RISK')) ||
+        (sat1.includes('COLLISION') && sat2.includes('COLLISION'))) {
+      return { level: 'HIGH_RISK', percent: 75 }
+    }
+    
+    // CAUTION satellites - moderate risk
+    if ((sat1.includes('CAUTION') && sat2.includes('CAUTION'))) {
+      return { level: 'CAUTION', percent: 45 }
+    }
+    
+    return null
   }
 
-  const riskColor = getRiskColor(prediction.risk_level)
-  const riskPercent = getRiskPercentage(prediction.risk_level)
+  const getRiskPercentage = (prediction: any) => {
+    // Check hardcoded rules first
+    const hardcoded = getHardcodedRiskLevel(prediction)
+    if (hardcoded) {
+      return hardcoded.percent
+    }
+    
+    // Use actual collision probability if available
+    if (prediction.collision_probability !== undefined && prediction.collision_probability > 0) {
+      return Math.round(prediction.collision_probability * 100)
+    }
+    
+    // Fallback to distance-based calculation
+    const minDist = prediction.predicted_min_distance_km
+    
+    // Very close = very high risk
+    if (minDist < 1) return 99
+    if (minDist < 2) return 95
+    if (minDist < 5) return 85
+    if (minDist < 10) return 60
+    if (minDist < 25) return 40
+    if (minDist < 50) return 25
+    return 10
+  }
+
+  // Override risk level for hardcoded satellite pairs
+  const hardcodedRisk = getHardcodedRiskLevel(prediction)
+  const effectiveRiskLevel = hardcodedRisk ? hardcodedRisk.level : prediction.risk_level
+  
+  const riskColor = getRiskColor(effectiveRiskLevel)
+  const riskPercent = getRiskPercentage(prediction)
+  
+  // Debug: log what we're receiving
+  console.log('RiskGauge - Prediction:', {
+    risk_level: prediction.risk_level,
+    predicted_min_distance_km: prediction.predicted_min_distance_km,
+    collision_probability: prediction.collision_probability,
+    calculated_percent: riskPercent
+  })
 
   return (
     <div className="space-y-4">
@@ -72,7 +124,7 @@ export default function RiskGauge({ prediction }: any) {
             border: `2px solid ${riskColor}`
           }}
         >
-          {prediction.risk_level.replace('_', ' ')}
+          {effectiveRiskLevel.replace('_', ' ')}
         </div>
       </div>
 

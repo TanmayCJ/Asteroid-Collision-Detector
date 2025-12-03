@@ -29,39 +29,107 @@ export default function TimeSlider({ prediction }: any) {
 
   return (
     <div className="space-y-6">
-      {/* Timeline visualization */}
-      <div className="relative h-24 bg-space-800/50 rounded-lg p-4">
-        {/* Distance line */}
-        <svg className="w-full h-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
+      {/* Risk amplitude graph above timeline */}
+      <div className="relative h-32 bg-space-800/50 rounded-lg p-4">
+        <svg className="w-full h-full" viewBox="0 0 1000 120">
           <defs>
-            <linearGradient id="distanceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" />
-              <stop offset="50%" stopColor="#ef4444" />
-              <stop offset="100%" stopColor="#10b981" />
+            {/* Gradient for high risk areas */}
+            <linearGradient id="riskGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.1" />
+            </linearGradient>
+            <linearGradient id="cautionGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.1" />
+            </linearGradient>
+            <linearGradient id="safeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0.1" />
             </linearGradient>
           </defs>
           
-          {/* Distance curve */}
+          {/* Grid lines */}
+          {[20, 40, 60, 80, 100].map((y) => (
+            <line
+              key={y}
+              x1="0"
+              y1={y}
+              x2="1000"
+              y2={y}
+              stroke="#2d3561"
+              strokeWidth="1"
+              opacity="0.3"
+            />
+          ))}
+          
+          {/* Risk amplitude curve - inverted so high risk = high amplitude */}
           <path
-            d={`M 0 ${100 - getDistanceAtTime(0) * 2} 
-                L 250 ${100 - getDistanceAtTime(6) * 2}
-                L 500 ${100 - getDistanceAtTime(12) * 2}
-                L 750 ${100 - getDistanceAtTime(18) * 2}
-                L 1000 ${100 - getDistanceAtTime(24) * 2}`}
-            fill="none"
-            stroke="url(#distanceGradient)"
-            strokeWidth="3"
+            d={(() => {
+              let pathData = 'M 0 120'
+              for (let i = 0; i <= 1000; i += 20) {
+                const hour = (i / 1000) * hours
+                const dist = getDistanceAtTime(hour)
+                // Invert: closer distance = higher amplitude (lower y value)
+                // Scale: 0-5km -> 0-100px amplitude
+                const amplitude = Math.max(0, Math.min(100, (25 - dist) * 4))
+                pathData += ` L ${i} ${120 - amplitude}`
+              }
+              pathData += ' L 1000 120 Z'
+              return pathData
+            })()}
+            fill="url(#riskGradient)"
+            opacity="0.9"
           />
           
-          {/* Current time marker */}
+          {/* Stroke line for the curve */}
+          <path
+            d={(() => {
+              let pathData = 'M 0'
+              for (let i = 0; i <= 1000; i += 20) {
+                const hour = (i / 1000) * hours
+                const dist = getDistanceAtTime(hour)
+                const amplitude = Math.max(0, Math.min(100, (25 - dist) * 4))
+                pathData += ` ${i === 0 ? '' : 'L'} ${i} ${120 - amplitude}`
+              }
+              return pathData
+            })()}
+            fill="none"
+            stroke="#ef4444"
+            strokeWidth="2"
+          />
+          
+          {/* Current time marker - vertical line */}
+          <line
+            x1={(timeIndex / hours) * 1000}
+            y1="0"
+            x2={(timeIndex / hours) * 1000}
+            y2="120"
+            stroke="#00d9ff"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+          />
+          
+          {/* Current risk amplitude marker */}
           <circle
             cx={(timeIndex / hours) * 1000}
-            cy={100 - currentDistance * 2}
-            r="8"
+            cy={120 - Math.max(0, Math.min(100, (25 - currentDistance) * 4))}
+            r="6"
             fill="#00d9ff"
             stroke="#ffffff"
             strokeWidth="2"
-          />
+          >
+            <animate
+              attributeName="r"
+              values="6;8;6"
+              dur="1.5s"
+              repeatCount="indefinite"
+            />
+          </circle>
+          
+          {/* Risk zone labels */}
+          <text x="10" y="15" fill="#ef4444" fontSize="10" opacity="0.7">HIGH RISK</text>
+          <text x="10" y="65" fill="#f59e0b" fontSize="10" opacity="0.7">CAUTION</text>
+          <text x="10" y="110" fill="#10b981" fontSize="10" opacity="0.7">SAFE</text>
         </svg>
       </div>
 
